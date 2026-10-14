@@ -12,8 +12,13 @@ CATEGORIAS = ["comida", "transporte", "lazer", "moradia", "saude", "estudos", "o
 def carregar():
     if not os.path.exists(ARQUIVO):
         return []
-    with open(ARQUIVO, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(ARQUIVO, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        # arquivo estragado: guarda uma copia e comeca de novo em vez de travar
+        os.replace(ARQUIVO, ARQUIVO + ".bak")
+        return []
 
 
 def salvar(gastos):
@@ -25,15 +30,30 @@ class App:
     def __init__(self, janela):
         self.janela = janela
         self.janela.title("Controle de Gastos")
-        self.janela.geometry("640x480")
+        self.janela.geometry("680x520")
         self.janela.resizable(False, False)
+        self.janela.configure(bg="#f2f2f2")
+
+        self.aplicar_estilo()
 
         self.gastos = carregar()
 
         self.montar_formulario()
+        self.montar_filtro()
         self.montar_tabela()
         self.montar_rodape()
         self.atualizar_tabela()
+
+    def aplicar_estilo(self):
+        estilo = ttk.Style()
+        estilo.theme_use("clam")
+        estilo.configure(".", background="#f2f2f2", font=("Segoe UI", 10))
+        estilo.configure("TLabelframe", background="#f2f2f2")
+        estilo.configure("TLabelframe.Label", background="#f2f2f2", font=("Segoe UI", 10, "bold"))
+        estilo.configure("TButton", padding=5)
+        estilo.configure("Treeview", rowheight=26, background="white", fieldbackground="white")
+        estilo.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"), background="#dcdcdc", padding=4)
+        estilo.map("Treeview", background=[("selected", "#3a7bd5")])
 
     # ---------- parte de cima: formulario ----------
     def montar_formulario(self):
@@ -59,6 +79,17 @@ class App:
         # enter no campo de valor tambem adiciona
         self.ent_valor.bind("<Return>", lambda e: self.adicionar())
 
+    # ---------- filtro por categoria ----------
+    def montar_filtro(self):
+        frame = ttk.Frame(self.janela)
+        frame.pack(fill="x", padx=10)
+
+        ttk.Label(frame, text="Mostrar:").pack(side="left")
+        self.cb_filtro = ttk.Combobox(frame, values=["todas"] + CATEGORIAS, width=15, state="readonly")
+        self.cb_filtro.current(0)
+        self.cb_filtro.pack(side="left", padx=5)
+        self.cb_filtro.bind("<<ComboboxSelected>>", lambda e: self.atualizar_tabela())
+
     # ---------- meio: tabela ----------
     def montar_tabela(self):
         frame = ttk.Frame(self.janela)
@@ -82,12 +113,17 @@ class App:
         self.tabela.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
 
+        self.tabela.bind("<Delete>", lambda e: self.remover())
+
+        # linhas alternadas pra facilitar a leitura
+        self.tabela.tag_configure("par", background="#f7f9fc")
+
     # ---------- parte de baixo: total e botoes ----------
     def montar_rodape(self):
         frame = ttk.Frame(self.janela)
         frame.pack(fill="x", padx=10, pady=(5, 10))
 
-        self.lbl_total = ttk.Label(frame, text="Total: R$ 0,00", font=("Segoe UI", 11, "bold"))
+        self.lbl_total = ttk.Label(frame, text="Total: R$ 0,00", font=("Segoe UI", 12, "bold"), foreground="#2e7d32")
         self.lbl_total.pack(side="left")
 
         ttk.Button(frame, text="Remover selecionado", command=self.remover).pack(side="right", padx=(5, 0))
@@ -146,15 +182,22 @@ class App:
         for linha in self.tabela.get_children():
             self.tabela.delete(linha)
 
+        filtro = self.cb_filtro.get()
+
         total = 0
+        linha = 0
         for i, g in enumerate(self.gastos):
-            self.tabela.insert("", "end", iid=str(i), values=(
+            if filtro != "todas" and g["categoria"] != filtro:
+                continue
+            # o iid continua sendo o indice na lista completa, entao remover funciona com filtro
+            self.tabela.insert("", "end", iid=str(i), tags=("par",) if linha % 2 else (), values=(
                 g["data"],
                 g["categoria"],
                 g["descricao"],
                 formatar(g["valor"])
             ))
             total += g["valor"]
+            linha += 1
 
         self.lbl_total.config(text=f"Total: R$ {formatar(total)}")
 

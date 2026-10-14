@@ -8,7 +8,8 @@ Feito pra Atividade Contínua 01 da disciplina Product: Analysis, Specification,
 
 - Adiciona um gasto com descrição, valor e categoria
 - Mostra todos os gastos numa tabela com o total no rodapé
-- Remove um gasto selecionado na tabela
+- Filtra a tabela por categoria (o total do rodapé acompanha o filtro)
+- Remove um gasto selecionado na tabela (botão ou tecla Delete)
 - Abre uma janela com o resumo por categoria (total e porcentagem)
 - Salva tudo num arquivo `gastos.json`, então os dados continuam lá depois que fecha o programa
 
