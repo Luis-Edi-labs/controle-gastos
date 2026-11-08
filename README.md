@@ -11,6 +11,7 @@ Feito pra Atividade Contínua 01 da disciplina Product: Analysis, Specification,
 - Filtra a tabela por categoria (o total do rodapé acompanha o filtro)
 - Remove um gasto selecionado na tabela (botão ou tecla Delete)
 - Abre uma janela com o resumo por categoria (total e porcentagem)
+- Limite de gastos do mês: barra que enche conforme gasta, fica vermelha e avisa quando passa do limite
 - Salva tudo num arquivo `gastos.json`, então os dados continuam lá depois que fecha o programa
 
 ## Como rodar
@@ -25,3 +26,5 @@ python gastos.py
 
 - `gastos.py` - todo o código do programa
 - `gastos.json` - criado automaticamente na primeira vez que salva um gasto
+- `config.json` - guarda o limite do mês
+- `test_gastos.py` - testes da parte de cálculo (`python -m unittest test_gastos`)
